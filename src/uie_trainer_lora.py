@@ -459,6 +459,8 @@ class UIETrainer(Seq2SeqTrainer):
                 # module_input_key = f"{name}_input"
                 # if module_input_key not in temporal_activation:
                 #     temporal_activation[module_input_key] = []
+                # print(input)
+                # exit()
                 hidden_dim = output.shape[-1]
 
                 if name not in temporal_activation_sum:
@@ -862,6 +864,8 @@ class UIETrainer(Seq2SeqTrainer):
 
                 # Prediction step
                 loss, logits, labels = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
+                # print("woshilogit", model, inputs, prediction_loss_only, ignore_keys)
+                # exit()
                 main_input_name = getattr(self.model, "main_input_name", "input_ids")
                 inputs_decode = self._prepare_input(inputs[main_input_name]) if args.include_inputs_for_metrics else None
 

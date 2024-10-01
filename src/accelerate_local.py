@@ -28,34 +28,34 @@ def compute_importance_mask(activation, ini_threshold, n_cluster, method, cluste
     # dist.barrier()
     dist.all_reduce(activation, op=dist.ReduceOp.AVG)
     # print(ini_threshold)
-    if method == 'sequential':
-        activation_chunks = activation.chunk(n_cluster)
-        activation = torch.stack([chunk.sum() for chunk in activation_chunks])
-        threshold = torch.quantile(activation, ini_threshold)
-        importance_mask = (activation > threshold).float().to(device)
-        assert hidden_dim % n_cluster == 0, "hidden_dim must be divisible by n_cluster."
-        importance_mask = importance_mask.repeat_interleave(hidden_dim // n_cluster)
-    elif method == 'weight_cluster' or method == 'weight_cluster_combined' \
-        or method == 'co-activation':
-        # cluster_indice = torch.tensor(cluster_indice, dtype=torch.int64, device=device)
-        # cluster_sums = torch.zeros(n_cluster, dtype=importance.dtype, device=device)
-        # cluster_sums = cluster_sums.scatter_add(0, cluster_indice, importance)
-        # threshold = torch.quantile(cluster_sums, ini_threshold)
-        # cluster_mask = (cluster_sums > threshold).float().to(device)
-        # importance_mask = torch.index_select(cluster_mask, 0, cluster_indice)
+    # if method == 'sequential':
+    #     activation_chunks = activation.chunk(n_cluster)
+    #     activation = torch.stack([chunk.sum() for chunk in activation_chunks])
+    #     threshold = torch.quantile(activation, ini_threshold)
+    #     importance_mask = (activation >= threshold).float().to(device)
+    #     assert hidden_dim % n_cluster == 0, "hidden_dim must be divisible by n_cluster."
+    #     importance_mask = importance_mask.repeat_interleave(hidden_dim // n_cluster)
+    # elif method == 'weight_cluster' or method == 'weight_cluster_combined' \
+    #     or method == 'co-activation':
+    #     # cluster_indice = torch.tensor(cluster_indice, dtype=torch.int64, device=device)
+    #     # cluster_sums = torch.zeros(n_cluster, dtype=importance.dtype, device=device)
+    #     # cluster_sums = cluster_sums.scatter_add(0, cluster_indice, importance)
+    #     # threshold = torch.quantile(cluster_sums, ini_threshold)
+    #     # cluster_mask = (cluster_sums > threshold).float().to(device)
+    #     # importance_mask = torch.index_select(cluster_mask, 0, cluster_indice)
 
-        cluster_indice = torch.tensor(cluster_indice, dtype=torch.int64, device=device)
-        cluster_sums = torch.zeros(n_cluster, dtype=activation.dtype, device=device)
-        cluster_sums.index_add_(0, cluster_indice, activation)
-        importance_mask = cluster_sums[cluster_indice]
-        # importance_mask = torch.zeros_like(importance)
-        # for i in range(importance_mask.shape[0]):
-        #     importance_mask[i] = cluster_sums[cluster_indice[i]]
-        threshold = torch.quantile(importance_mask, ini_threshold)
-        importance_mask = (importance_mask > threshold).float().to(device)
-    else:
-        threshold = torch.quantile(activation, ini_threshold)
-        importance_mask = (activation > threshold).float().to(device)
+    #     cluster_indice = torch.tensor(cluster_indice, dtype=torch.int64, device=device)
+    #     cluster_sums = torch.zeros(n_cluster, dtype=activation.dtype, device=device)
+    #     cluster_sums.index_add_(0, cluster_indice, activation)
+    #     importance_mask = cluster_sums[cluster_indice]
+    #     # importance_mask = torch.zeros_like(importance)
+    #     # for i in range(importance_mask.shape[0]):
+    #     #     importance_mask[i] = cluster_sums[cluster_indice[i]]
+    #     threshold = torch.quantile(importance_mask, ini_threshold)
+    #     importance_mask = (importance_mask > threshold).float().to(device)
+    # else:
+    threshold = torch.quantile(activation, ini_threshold)
+    importance_mask = (activation >= threshold).float().to(device)
     return importance_mask
 
 

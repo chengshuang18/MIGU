@@ -14,7 +14,7 @@ activation_combined=$4
 seed=$5
 
 deepspeed --master_port $port src/run_uie_lora.py \
-   --do_train \
+   --do_predict \
    --predict_with_generate \
    --model_name_or_path initial_model/${model} \
    --data_dir CL_Benchmark \
@@ -23,9 +23,9 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --instruction_strategy single \
    --output_dir output/${model}/${method}/${cluster_constructure_method}/order_1/outputs/1-dbpedia \
    --per_device_train_batch_size 8 \
-   --per_device_eval_batch_size 64 \
+   --per_device_eval_batch_size 128 \
    --gradient_accumulation_steps 1 \
-   --learning_rate 1e-03 \
+   --learning_rate 1e-04 \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
    --run_name order1_round1 \

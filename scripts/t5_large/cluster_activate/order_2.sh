@@ -11,10 +11,10 @@ cluster=$1
 ini_threshold=$2
 cluster_constructure_method=$3
 activation_combined=$4
+seed=$5
 
 deepspeed --master_port $port src/run_uie_lora.py \
    --do_train \
-   --do_predict \
    --predict_with_generate \
    --model_name_or_path initial_model/${model} \
    --data_dir CL_Benchmark \
@@ -22,10 +22,10 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
    --output_dir output/${model}/${method}/${cluster_constructure_method}/order_2/outputs/1-dbpedia \
-   --per_device_train_batch_size 8 \
+   --per_device_train_batch_size 16 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
-   --learning_rate 1e-03 \
+   --learning_rate 1e-04 \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
    --run_name order2_round1 \
@@ -45,13 +45,13 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_steps 1500 \
    --lamda 0 \
    --method ${method} \
-   --is_first_task True
+   --is_first_task True \
+   --seed=${seed}
 
 sleep 5
 
 deepspeed --master_port $port src/run_uie_lora.py \
    --do_train \
-   --do_predict \
    --predict_with_generate \
    --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_2/outputs/1-dbpedia/tuning_weight \
    --data_dir CL_Benchmark \
@@ -59,7 +59,7 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
    --output_dir output/${model}/${method}/${cluster_constructure_method}/order_2/outputs/2-amazon \
-   --per_device_train_batch_size 8 \
+   --per_device_train_batch_size 16 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
    --learning_rate 1e-04 \
@@ -86,13 +86,13 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --n_clusters $cluster \
    --cluster_constructure_method ${cluster_constructure_method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined}
+   --activation_combined ${activation_combined} \
+   --seed=${seed}
 
 sleep 5
 
 deepspeed --master_port $port src/run_uie_lora.py \
    --do_train \
-   --do_predict \
    --predict_with_generate \
    --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_2/outputs/2-amazon/tuning_weight \
    --data_dir CL_Benchmark \
@@ -100,7 +100,7 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
    --output_dir output/${model}/${method}/${cluster_constructure_method}/order_2/outputs/3-agnews \
-   --per_device_train_batch_size 8 \
+   --per_device_train_batch_size 16 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
    --learning_rate 1e-04 \
@@ -127,7 +127,8 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --n_clusters $cluster \
    --cluster_constructure_method ${cluster_constructure_method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined}
+   --activation_combined ${activation_combined} \
+   --seed=${seed}
 
 sleep 5
 
@@ -141,7 +142,7 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
    --output_dir output/${model}/${method}/${cluster_constructure_method}/order_2/outputs/4-yahoo \
-   --per_device_train_batch_size 8 \
+   --per_device_train_batch_size 16 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
    --learning_rate 1e-04 \
@@ -168,4 +169,5 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --n_clusters $cluster \
    --cluster_constructure_method ${cluster_constructure_method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined}
+   --activation_combined ${activation_combined} \
+   --seed=${seed}
