@@ -442,25 +442,8 @@ class UIETrainer(Seq2SeqTrainer):
         temporal_activation_sum = {}
         cluster_indice = None
         if args.method == "migu" and args.is_first_task == False:
-            import utils_local
-            from peft.tuners.lora import Linear
-            # cluster_indice = utils_local.get_cluster_indice(model, args)
-            if args.cluster_constructure_method == "weight_cluster":
-                cluster_indice = utils_local.get_cluster_indices(model, args)
-            elif  args.cluster_constructure_method == "weight_cluster_combined":
-                # cluster_indice = utils_local.get_cluster_indices_combined_multiprocessing(model, args)
-                cluster_indice = utils_local.get_cluster_indices_combined(model, args)
-            elif args.cluster_constructure_method == "co-activation":
-                self._train_batch_size = 1
-                calib_dataloader = self.get_train_dataloader()
-                cluster_indice = utils_local.get_cluster_indices_co_activation(self, model, calib_dataloader, args)
 
             def hook_fn(module, input, output, name):
-                # module_input_key = f"{name}_input"
-                # if module_input_key not in temporal_activation:
-                #     temporal_activation[module_input_key] = []
-                # print(input)
-                # exit()
                 hidden_dim = output.shape[-1]
 
                 if name not in temporal_activation_sum:
@@ -548,9 +531,7 @@ class UIETrainer(Seq2SeqTrainer):
 
                 with self.accelerator.accumulate(model):
                     tr_loss_step = self.training_step(model, inputs, temporal_activation_sum, self.args.method,
-                                                      self.args.is_first_task, self.args.cluster_constructure_method,
-                                                      self.args.activation_combined,
-                                                      self.args.n_clusters, cluster_indice, self.args.ini_threshold)
+                                                      self.args.is_first_task, self.args.ini_threshold)
 
                 if (
                     args.logging_nan_inf_filter
@@ -722,8 +703,7 @@ class UIETrainer(Seq2SeqTrainer):
         return TrainOutput(self.state.global_step, train_loss, metrics)
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]],
-                      temporal_activation_sum, method, is_first_task, cluster_constructure_method,
-                      activation_combined, n_clusters, cluster_indice, ini_threshold) -> torch.Tensor:
+                      temporal_activation_sum, method, is_first_task, ini_threshold) -> torch.Tensor:
         """
         Perform a training step on a batch of inputs.
 
@@ -770,10 +750,7 @@ class UIETrainer(Seq2SeqTrainer):
                 scaled_loss.backward()
         else:
             self.accelerator.backward(loss, activation=temporal_activation_sum, method=method,
-                                      is_first_task=is_first_task, n_clusters=n_clusters,
-                                      ini_threshold=ini_threshold, cluster_indice=cluster_indice,
-                                      activation_combined=activation_combined,
-                                      cluster_constructure_method=cluster_constructure_method)
+                                      is_first_task=is_first_task, ini_threshold=ini_threshold)
 
         return loss.detach() / self.args.gradient_accumulation_steps
 

@@ -1,20 +1,19 @@
 #!/bin/bash
 set -x
+
 export CUDA_DEVICE_ORDER="PCI_BUS_ID"
 
 port=$(shuf -i25000-30000 -n1)
-method="cluster_activate"
-model="t5_large"
 
-cluster=$1
-ini_threshold=$2
-cluster_constructure_method=$3
-activation_combined=$4
+model=$1
+tuning_method=$2
+method=$3
+ini_threshold=$4
 seed=$5
 lr=1e-4
 # mnli → cb → wic → copa → qqp → boolqa → rte → imdb → yelp → amazon → sst-2 → dbpedia → ag → multirc → yahoo
 # 1-mnli
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
    --model_name_or_path initial_model/${model} \
@@ -22,7 +21,7 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --task_config_dir configs/order4_configs/mnli \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/1-mnli \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/1-mnli \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -51,15 +50,15 @@ deepspeed --master_port $port src/run_uie_lora.py \
 
 sleep 5
 # 2-cb
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/1-mnli/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/1-mnli/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/cb \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/2-cb \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/2-cb \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -82,25 +81,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 3-wic
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/2-cb/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/2-cb/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/wic \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/3-wic \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/3-wic \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -124,25 +120,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_steps 1500 \
    --lamda 0 \
    --lora_dim 8 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 4-copa
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/3-wic/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/3-wic/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/copa \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/4-copa \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/4-copa \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -165,25 +158,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 5-qqp
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/4-copa/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/4-copa/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/qqp \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/5-qqp \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/5-qqp \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -206,25 +196,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 6-boolqa
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/5-qqp/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/5-qqp/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/boolqa \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/6-boolqa \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/6-boolqa \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -247,25 +234,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 7-rte
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/6-boolqa/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/6-boolqa/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/rte \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/7-rte \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/7-rte \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -288,25 +272,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 8-imdb
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/7-rte/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/7-rte/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/imdb \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/8-imdb \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/8-imdb \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -329,25 +310,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 9-yelp
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/8-imdb/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/8-imdb/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/yelp \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/9-yelp \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/9-yelp \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -370,25 +348,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 10- amazon
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/9-yelp/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/9-yelp/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/amazon \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/10-amazon \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/10-amazon \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -411,25 +386,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 11-sst-2
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/10-amazon/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/10-amazon/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/sst-2 \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/11-sst-2 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/11-sst-2 \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -452,25 +424,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 12-dbpedia
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/11-sst-2/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/11-sst-2/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/dbpedia \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/12-dbpedia \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/12-dbpedia \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -493,25 +462,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 13-ag
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/12-dbpedia/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/12-dbpedia/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/agnews \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/13-agnews \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/13-agnews \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -534,25 +500,22 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 14-multirc
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/13-agnews/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/13-agnews/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/multirc \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/14-multirc \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/14-multirc \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -575,26 +538,23 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 # 15-yahoo
-deepspeed --master_port $port src/run_uie_lora.py \
+deepspeed --master_port $port src/run_uie_ft.py \
    --do_train \
    --do_predict \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/14-multirc/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_4/outputs/14-multirc/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order4_configs/yahoo \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_4/outputs/15-yahoo \
+   --output_dir output/${model}/${tuning_method}/${method}/order_4/outputs/15-yahoo \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
    --gradient_accumulation_steps 1 \
@@ -617,10 +577,7 @@ deepspeed --master_port $port src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}

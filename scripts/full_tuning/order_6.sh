@@ -4,20 +4,16 @@ set -x
 export CUDA_DEVICE_ORDER="PCI_BUS_ID"
 
 port=$(shuf -i25000-30000 -n1)
-method="cluster_activate"
-model="t5_large"
 
-cluster=$1
-ini_threshold=$2
-cluster_constructure_method=$3
-activation_combined=$4
+model=$1
+tuning_method=$2
+method=$3
+ini_threshold=$4
 seed=$5
 lr=1e-4
 # yelp → amazon → mnli → cb → copa → qqp → rte → imdb → sst-2 → dbpedia → ag → yahoo → multirc → boolqa → wic
- 
-# bash scripts/order_6.sh > output/${model}/${method}/${cluster_constructure_method}/order_6/logs/train_and_infer.log 2>&1
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
    --model_name_or_path initial_model/${model} \
@@ -25,10 +21,10 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --task_config_dir configs/order6_configs/yelp \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/1-yelp \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/1-yelp \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -54,18 +50,18 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/1-yelp/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/1-yelp/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/amazon \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/2-amazon \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/2-amazon \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -85,28 +81,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/2-amazon/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/2-amazon/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/MNLI \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/3-MNLI \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/3-MNLI \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 2 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -126,28 +119,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/3-MNLI/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/3-MNLI/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/CB \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/4-CB \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/4-CB \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -167,28 +157,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/4-CB/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/4-CB/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/COPA \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/5-COPA \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/5-COPA \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -208,28 +195,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/5-COPA/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/5-COPA/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/QQP \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/6-QQP \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/6-QQP \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -249,28 +233,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/6-QQP/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/6-QQP/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/RTE \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/7-RTE \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/7-RTE \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -290,28 +271,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/7-RTE/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/7-RTE/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/IMDB \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/8-IMDB \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/8-IMDB \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -331,28 +309,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/8-IMDB/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/8-IMDB/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/SST-2 \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/9-SST-2 \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/9-SST-2 \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -372,28 +347,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/9-SST-2/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/9-SST-2/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/dbpedia \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/10-dbpedia \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/10-dbpedia \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -413,28 +385,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/10-dbpedia/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/10-dbpedia/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/agnews \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/11-agnews \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/11-agnews \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -454,28 +423,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/11-agnews/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/11-agnews/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/yahoo \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/12-yahoo \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/12-yahoo \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -495,28 +461,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/12-yahoo/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/12-yahoo/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/MultiRC \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/13-MultiRC \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/13-MultiRC \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -536,28 +499,25 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/13-MultiRC/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/13-MultiRC/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/BoolQA \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/14-BoolQA \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/14-BoolQA \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -577,29 +537,26 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}
 
 sleep 5
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
+deepspeed --master_port 25000 src/run_uie_ft.py \
    --do_train \
    --do_predict \
    --predict_with_generate \
-   --model_name_or_path output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/14-BoolQA/tuning_weight \
+   --model_name_or_path output/${model}/${tuning_method}/${method}/order_6/outputs/14-BoolQA/tuning_weight \
    --data_dir CL_Benchmark \
    --task_config_dir configs/order6_configs/WiC \
    --instruction_file configs/instruction_config.json \
    --instruction_strategy single \
-   --output_dir output/${model}/${method}/${cluster_constructure_method}/order_6/outputs/15-WiC \
-   --per_device_train_batch_size 4 \
+   --output_dir output/${model}/${tuning_method}/${method}/order_6/outputs/15-WiC \
+   --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 64 \
-   --gradient_accumulation_steps 4 \
+   --gradient_accumulation_steps 1 \
    --learning_rate ${lr} \
    --num_train_epochs 1 \
    --deepspeed configs/ds_configs/stage0.config \
@@ -619,10 +576,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 deepspeed --master_port 25000 src/run_uie_lora.py \
    --save_strategy no \
    --save_steps 1500 \
    --lamda 0 \
-   --method ${method} \
    --is_first_task False \
-   --n_clusters $cluster \
-   --cluster_constructure_method ${cluster_constructure_method} \
+   --method ${method} \
    --ini_threshold ${ini_threshold} \
-   --activation_combined ${activation_combined} \
-   --seed ${seed}
+   --seed=${seed}

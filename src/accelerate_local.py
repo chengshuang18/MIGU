@@ -18,42 +18,12 @@ def apply_importance_mask(name, module, importance_mask):
             module.weight.grad *= importance_mask.unsqueeze(dim=-1).to(module.weight.grad.device)
 
 
-def compute_importance_mask(activation, ini_threshold, n_cluster, method, cluster_indice):
+def compute_importance_mask(activation, ini_threshold):
     """Compute the importance mask based on the provided method."""
     # activation, kwargs['ini_threshold'], kwargs['cluster_constructure_method'], cluster_indice
     device = activation[0].device
-    hidden_dim = activation.shape[-1]
-    # activation = torch.cat([item.reshape(-1, hidden_dim) for item in activation], dim=0)
-    # importance = torch.mean(activation.abs(), dim=0)
     # dist.barrier()
     dist.all_reduce(activation, op=dist.ReduceOp.AVG)
-    # print(ini_threshold)
-    # if method == 'sequential':
-    #     activation_chunks = activation.chunk(n_cluster)
-    #     activation = torch.stack([chunk.sum() for chunk in activation_chunks])
-    #     threshold = torch.quantile(activation, ini_threshold)
-    #     importance_mask = (activation >= threshold).float().to(device)
-    #     assert hidden_dim % n_cluster == 0, "hidden_dim must be divisible by n_cluster."
-    #     importance_mask = importance_mask.repeat_interleave(hidden_dim // n_cluster)
-    # elif method == 'weight_cluster' or method == 'weight_cluster_combined' \
-    #     or method == 'co-activation':
-    #     # cluster_indice = torch.tensor(cluster_indice, dtype=torch.int64, device=device)
-    #     # cluster_sums = torch.zeros(n_cluster, dtype=importance.dtype, device=device)
-    #     # cluster_sums = cluster_sums.scatter_add(0, cluster_indice, importance)
-    #     # threshold = torch.quantile(cluster_sums, ini_threshold)
-    #     # cluster_mask = (cluster_sums > threshold).float().to(device)
-    #     # importance_mask = torch.index_select(cluster_mask, 0, cluster_indice)
-
-    #     cluster_indice = torch.tensor(cluster_indice, dtype=torch.int64, device=device)
-    #     cluster_sums = torch.zeros(n_cluster, dtype=activation.dtype, device=device)
-    #     cluster_sums.index_add_(0, cluster_indice, activation)
-    #     importance_mask = cluster_sums[cluster_indice]
-    #     # importance_mask = torch.zeros_like(importance)
-    #     # for i in range(importance_mask.shape[0]):
-    #     #     importance_mask[i] = cluster_sums[cluster_indice[i]]
-    #     threshold = torch.quantile(importance_mask, ini_threshold)
-    #     importance_mask = (importance_mask > threshold).float().to(device)
-    # else:
     threshold = torch.quantile(activation, ini_threshold)
     importance_mask = (activation >= threshold).float().to(device)
     return importance_mask
@@ -63,17 +33,16 @@ def backward(self, loss, **kwargs):
     """Custom backward method that applies importance masks to gradients."""
     self.engine.backward(loss)
 
-    if not kwargs.get('is_first_task', True) and (kwargs.get('method') == "cluster_activate" or kwargs.get('method') == "random_update")\
+    if not kwargs.get('is_first_task', True) and (kwargs.get('method') == "migu" or kwargs.get('method') == "random_update")\
         and self.engine.is_gradient_accumulation_boundary():
 
         ## parse parameters
         method = kwargs['method']
         activations = kwargs['activation']
-        n_clusters = kwargs.get('n_clusters')
         ini_threshold = kwargs.get('ini_threshold')
         if method == "cluster_activate":
             for name, activation in activations.items():
-                importance_mask = compute_importance_mask(activation, ini_threshold, None, None, None)
+                importance_mask = compute_importance_mask(activation, ini_threshold)
                 module = get_module(self.engine, name)
                 apply_importance_mask(name, module, importance_mask)
 

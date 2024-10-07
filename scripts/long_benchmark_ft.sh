@@ -4,7 +4,7 @@ cluster_constructure_method="sequential"
 activation_combined=True
 method="cluster_activate"
 
-seeds=(1024)
+seeds=(42 1024 2048)
 
 for ini_threshold in "${ini_thresholds[@]}"; do
   for seed in "${seeds[@]}"; do
